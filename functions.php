@@ -1,12 +1,18 @@
 <?php
 
+/**
+ * Enqueues the parent theme stylesheet.
+ */
 function famnet_enqueue_styles() {
     wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
 }
 add_action( 'wp_enqueue_scripts', 'famnet_enqueue_styles' );
 
 /**
- * When visiting the product directory, ensure that a category is selected.
+ * Don't allow visits to the 'shop' page unless they are specific to a category.
+ *
+ * When you try to visit a non-category Shop page, you will be redirected to the
+ * page corresponding to the first category.
  */
 function famnet_redirect_to_category() {
 	// If this is not the WooCommerce shop page, bail.
@@ -14,17 +20,19 @@ function famnet_redirect_to_category() {
 		return;
 	}
 
+	// This is a product category page, so we are OK.
 	if ( is_product_category() ) {
 		return;
 	}
 
+	// We decide which category to redirect to by grabbing the first one in alphabetical order.
 	// Get the first category.
 	$categories = get_terms( array(
 		'taxonomy'   => 'product_cat',
 		'hide_empty' => false,
 	) );
 
-	// Exclude uncategorized.
+	// Exclude 'uncategorized'.
 	$categories = array_filter( $categories, function( $category ) {
 		return 'uncategorized' !== $category->slug;
 	} );
@@ -34,10 +42,8 @@ function famnet_redirect_to_category() {
 		return;
 	}
 
-	// Get the shop URL.
-	$shop_url = get_permalink( wc_get_page_id( 'shop' ) );
-
 	// Get the first category's URL.
+	$shop_url = get_permalink( wc_get_page_id( 'shop' ) );
 	$category = array_shift( $categories );
 	$url      = add_query_arg( 'product_cat', $category->slug, $shop_url );
 
@@ -48,11 +54,15 @@ add_action( 'template_redirect', 'famnet_redirect_to_category' );
 
 /**
  * Unhook WC's default archive description and hook our own.
+ *
+ * We use this to display the category description on the category page. This is what
+ * powers the "About" section in the header of each category page.
+ *
+ * Visit Dashboard > Products > Categories and add a description to each category.
  */
 function famnet_archive_description() {
 	$description = '';
 
-	// Visit Dashboard > Products > Categories and add a description to the category.
 	if ( is_product_category() ) {
 		$term        = get_queried_object();
 		$description = $term->description;
