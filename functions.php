@@ -111,3 +111,19 @@ function famnet_register_sidebars() {
 	}
 }
 add_action( 'init', 'famnet_register_sidebars', 200 );
+
+/**
+ * Ensure that Divi enqueues the proper CPT styles on the product category page.
+ *
+ * There's a bug in Divi that causes the CPT styles not to be enqueued when the
+ * archive contains no items. See `et_builder_is_custom_post_type_archive()`, which
+ * relies on `get_the_ID()`; on empty archive views, this number will be empty.
+ */
+function famnet_divi_enqueue_cpt_styles() {
+	if ( ! is_shop() ) {
+		return;
+	}
+
+	$divi_page_resource = et_core_page_resource_get( 'divi', 'customizer-cpt', 'global' );
+}
+add_action( 'wp_enqueue_scripts', 'famnet_divi_enqueue_cpt_styles', 200 );
